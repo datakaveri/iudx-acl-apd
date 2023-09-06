@@ -1,12 +1,13 @@
 #!/bin/bash
 
-MAJOR_RELEASE=3
+MAJOR_RELEASE=5
 MINOR_RELEASE=0
-COMMIT_ID=`git log  -1 --pretty=%h`
-# last commit id of master branch
-# To be executed from project root
-docker build -t dockerhub.iudx.io/iudx/acl-apd-depl:$MAJOR_RELEASE.$MINOR_RELEASE-$COMMIT_ID -f docker/depl.dockerfile . && \
-docker push dockerhub.iudx.io/iudx/acl-apd-depl:$MAJOR_RELEASE.$MINOR_RELEASE-$COMMIT_ID
+PATCH_RELEASE=0-alpha
+COMMIT_ID=`git log -1 --pretty=%h` # last commit-id in short form
 
-docker build -t dockerhub.iudx.io/iudx/acl-apd-dev:$MAJOR_RELEASE.$MINOR_RELEASE-$COMMIT_ID -f docker/dev.dockerfile . && \
-docker push dockerhub.iudx.io/iudx/acl-apd-dev:$MAJOR_RELEASE.$MINOR_RELEASE-$COMMIT_ID
+# To be executed from project root
+docker build -t ghcr.io/datakaveri/acl-apd-depl:$MAJOR_RELEASE.$MINOR_RELEASE.$PATCH_RELEASE-$COMMIT_ID -f docker/depl.dockerfile . && \
+docker push ghcr.io/datakaveri/acl-apd-depl:$MAJOR_RELEASE.$MINOR_RELEASE.$PATCH_RELEASE-$COMMIT_ID
+
+docker build -t ghcr.io/datakaveri/acl-apd-dev:$MAJOR_RELEASE.$MINOR_RELEASE.$PATCH_RELEASE-$COMMIT_ID -f docker/dev.dockerfile . && \
+docker push ghcr.io/datakaveri/acl-apd-dev:$MAJOR_RELEASE.$MINOR_RELEASE.$PATCH_RELEASE-$COMMIT_ID
