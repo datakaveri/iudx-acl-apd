@@ -1,15 +1,14 @@
 ![IUDX](./iudx.png)
 
 # Setup and Installation Guide
-This document contains the installation and configuration
-processes of the external modules of each Verticle in Data Exchange ACL-APD Server.
+This document contains the installation and configuration information required to deploy the Data Exchange (DX) ACL APD Server.
 
 ## Configuration
-In order to setup PostgreSQL, RabbitMQ, Email Service, connect with DX Catalogue Server, DX AAA Server, appropriate information
-could be updated in configs. Please refer [Configurations](https://github.com/datakaveri/iudx-acl-apd/blob/main/docs/Configurations.md)
+In order to connect the DX ACL APD Server with PostgreSQL, RabbitMQ, Email Service, DX Catalogue Server, DX AAA Server, etc please refer [Configurations](https://github.com/datakaveri/iudx-acl-apd/blob/main/docs/Configurations.md). It contains appropriate information which shall be updated as per the deployment. 
 
 ## Dependencies
-### External
+In this section we explain about the dependencies and their scope.  It is expected that the dependencies are met before starting the deployment of DX ACL APD Server.
+### External Dependencies
 | Software Name    | Purpose                                                                                                                          | 
 |:-----------------|:---------------------------------------------------------------------------------------------------------------------------------|
 | PostgreSQL       | For storing information related to policy, access Request based CRUD operations, approved access requests, resources and users   |
@@ -17,11 +16,11 @@ could be updated in configs. Please refer [Configurations](https://github.com/da
 | SMTP Mail Server | To send email notifications to provider, provider delegates when access requests are created by the consumer, consumer delegates |
 
 
-### Other Dependencies
+### Internal Dependencies
 | Software Name                                              | Purpose                                                               | 
 |:-----------------------------------------------------------|:----------------------------------------------------------------------|
-| Authentication Authorization and Accounting (AAA) Server   | used to download certificate for JWT token decoding, to get user info |
-| Catalogue Server                                           | used to fetch the list of resource and provider related information   |
+| DX Authentication Authorization and Accounting (AAA) Server   | Used to download certificate for JWT token decoding and to get user info |
+| DX Catalogue Server                                           | Used to fetch the list of resource and provider related information   |
 
 ### Prerequisites
 ### Keycloak registration for DX ACL-APD as trustee and APD
