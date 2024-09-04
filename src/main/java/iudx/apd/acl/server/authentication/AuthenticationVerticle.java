@@ -1,6 +1,7 @@
 package iudx.apd.acl.server.authentication;
 
 import static iudx.apd.acl.server.authentication.Constants.AUTH_CERTIFICATE_PATH;
+import static iudx.apd.acl.server.authentication.Constants.JWT_LEEWAY_TIME;
 import static iudx.apd.acl.server.common.Constants.AUTH_SERVICE_ADDRESS;
 
 import io.vertx.core.AbstractVerticle;
@@ -68,6 +69,7 @@ public class AuthenticationVerticle extends AbstractVerticle {
               binder = new ServiceBinder(vertx);
 
               JWTAuthOptions jwtAuthOptions = new JWTAuthOptions();
+              jwtAuthOptions.getJWTOptions().setLeeway(JWT_LEEWAY_TIME);
               jwtAuthOptions.addPubSecKey(
                   new PubSecKeyOptions().setAlgorithm("ES256").setBuffer(cert));
               /*
@@ -77,7 +79,7 @@ public class AuthenticationVerticle extends AbstractVerticle {
                   config().getBoolean("jwtIgnoreExpiry") != null
                       && config().getBoolean("jwtIgnoreExpiry");
               if (jwtIgnoreExpiry) {
-                jwtAuthOptions.getJWTOptions().setIgnoreExpiration(true);
+                jwtAuthOptions.getJWTOptions().setIgnoreExpiration(true).setLeeway(JWT_LEEWAY_TIME);
                 LOGGER.warn(
                     "JWT ignore expiration set to true, "
                         + "do not set IgnoreExpiration in production!!");
