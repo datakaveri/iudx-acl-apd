@@ -7,6 +7,7 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.serviceproxy.ServiceBinder;
 import iudx.apd.acl.server.aaaService.AuthClient;
+import iudx.apd.acl.server.authentication.model.UserInfo;
 import iudx.apd.acl.server.policy.CatalogueClient;
 import iudx.apd.acl.server.policy.PostgresService;
 
@@ -23,6 +24,7 @@ public class NotificationVerticle extends AbstractVerticle {
   private WebClient webClient;
   private WebClientOptions webClientOptions;
   private AuthClient authClient;
+  private UserInfo userInfo;
 
   @Override
   public void start() {
@@ -32,6 +34,7 @@ public class NotificationVerticle extends AbstractVerticle {
     webClientOptions.setTrustAll(false).setVerifyHost(true).setSsl(true);
     webClient = WebClient.create(vertx, webClientOptions);
     getDelegateEmailIds = new GetDelegateEmailIds(config(), webClient);
+    userInfo = new UserInfo();
 
     authClient = new AuthClient(config(), webClient);
 
@@ -39,7 +42,7 @@ public class NotificationVerticle extends AbstractVerticle {
     createNotification =
         new CreateNotification(postgresService, catalogueClient, emailNotification, authClient);
     deleteNotification = new DeleteNotification(postgresService);
-    updateNotification = new UpdateNotification(postgresService);
+    updateNotification = new UpdateNotification(authClient,userInfo, postgresService);
     getNotification = new GetNotification(postgresService);
     notificationService =
         new NotificationServiceImpl(

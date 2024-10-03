@@ -11,17 +11,18 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
-import io.vertx.sqlclient.SqlConnection;
 import io.vertx.sqlclient.Tuple;
+import iudx.apd.acl.server.aaaService.AuthClient;
 import iudx.apd.acl.server.apiserver.util.RequestStatus;
 import iudx.apd.acl.server.apiserver.util.User;
+import iudx.apd.acl.server.authentication.model.DxRole;
+import iudx.apd.acl.server.authentication.model.UserInfo;
 import iudx.apd.acl.server.common.HttpStatusCode;
 import iudx.apd.acl.server.common.ResponseUrn;
 import iudx.apd.acl.server.policy.PostgresService;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collector;
@@ -40,8 +41,14 @@ public class UpdateNotification {
   private String consumerEmailId;
   private UUID policyId;
   private LocalDateTime expiryAt;
+  private String resourceServerUrl;
+  private AuthClient authClient;
+  private UserInfo userInfo;
 
-  public UpdateNotification(PostgresService postgresService) {
+  public UpdateNotification(
+      AuthClient authClient, UserInfo userInfo, PostgresService postgresService) {
+    this.authClient = authClient;
+    this.userInfo = userInfo;
     this.postgresService = postgresService;
   }
 
@@ -311,29 +318,19 @@ public class UpdateNotification {
    *     JsonObject
    */
   public Future<Boolean> checkIfPolicyExists(String query) {
-    LOG.trace("inside checkIfPolicyExists method");
+    LOG.debug("inside checkIfPolicyExists method");
     Promise<Boolean> promise = Promise.promise();
-    Tuple consumerTuple = Tuple.of(getConsumerId());
 
-    executeQuery(
-        GET_CONSUMER_EMAIL_QUERY,
-        consumerTuple,
-        consumerEmailHandler -> {
-          if (consumerEmailHandler.succeeded()) {
-            JsonArray result = consumerEmailHandler.result().getJsonArray(RESULT);
+    /* get consumer email from DX Auth server based on consumer ID, role, resource server */
+    userInfo.setUserId(consumerId).setAudience(getResourceServerUrl()).setRole(DxRole.CONSUMER);
 
-            /* if the response is empty the consumer email is not found*/
-            if (result.isEmpty()) {
-              JsonObject failureMessage =
-                  new JsonObject()
-                      .put(TYPE, INTERNAL_SERVER_ERROR.getValue())
-                      .put(TITLE, ResponseUrn.INTERNAL_SERVER_ERROR.getUrn())
-                      .put(DETAIL, "Request cannot be approved as, consumer is not found");
-              promise.fail(failureMessage.encode());
-            } else {
-              String consumerEmail = result.getJsonObject(0).getString("email_id");
-              setConsumerEmailId(consumerEmail);
-              Tuple tuple = Tuple.of(getOwnerId(), getItemId(), consumerEmail);
+    Future<User> consumerInfoFromAuthFuture = authClient.fetchUserInfo(userInfo);
+    consumerInfoFromAuthFuture
+        .onSuccess(
+            consumer -> {
+              String consumerEmailId = consumer.getEmailId();
+              setConsumerEmailId(consumerEmailId);
+              Tuple tuple = Tuple.of(getOwnerId(), getItemId(), consumerEmailId);
               executeQuery(
                   query,
                   tuple,
@@ -354,11 +351,22 @@ public class UpdateNotification {
                       } else {
                         promise.complete(false);
                       }
+                    } else {
+                      promise.fail(handler.cause().getMessage());
                     }
                   });
-            }
-          }
-        });
+            })
+        .onFailure(
+            failure -> {
+              LOG.error("Failure from auth client : {}", failure.getMessage());
+              JsonObject failureMessage =
+                  new JsonObject()
+                      .put(TYPE, INTERNAL_SERVER_ERROR.getValue())
+                      .put(TITLE, ResponseUrn.INTERNAL_SERVER_ERROR.getUrn())
+                      .put(DETAIL, "Request cannot be approved as, consumer is not found");
+              promise.fail(failureMessage.encode());
+            });
+
     return promise.future();
   }
 
@@ -407,6 +415,7 @@ public class UpdateNotification {
                   setConsumerId(UUID.fromString(consumer));
                   setItemId(UUID.fromString(itemId));
                   setItemType(itemType);
+                  setResourceServerUrl(resourceServerUrl);
                   /* check if the resource server url in the token equals the resource server url for the resource */
                   if (resourceServerUrl.equals(user.getResourceServerUrl())) {
                     promise.complete(true);
@@ -583,5 +592,13 @@ public class UpdateNotification {
 
   public void setExpiryAt(LocalDateTime expiryAt) {
     this.expiryAt = expiryAt;
+  }
+
+  public String getResourceServerUrl() {
+    return resourceServerUrl;
+  }
+
+  public void setResourceServerUrl(String resourceServerUrl) {
+    this.resourceServerUrl = resourceServerUrl;
   }
 }
