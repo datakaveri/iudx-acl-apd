@@ -31,7 +31,7 @@
         <maven-surefire-report-plugin.version>3.5.2</maven-surefire-report-plugin.version>
         <junit-jupiter.params>5.11.3</junit-jupiter.params>
         <testcontainer.params>1.20.4</testcontainer.params>
-        <postgresql.version>42.7.4</postgresql.version>
+        <postgresql.version>42.7.7</postgresql.version>
         <guava.version>33.3.1-jre</guava.version>
         <flyway-db-core.version>11.0.1</flyway-db-core.version>
         <client.version>2.1</client.version>
